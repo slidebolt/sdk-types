@@ -50,11 +50,12 @@ type Storage struct {
 }
 
 type Device struct {
-	ID         string  `json:"id"`
-	SourceID   string  `json:"source_id"`
-	SourceName string  `json:"source_name"`
-	LocalName  string  `json:"local_name"`
-	Config     Storage `json:"config"`
+	ID         string            `json:"id"`
+	SourceID   string            `json:"source_id"`
+	SourceName string            `json:"source_name"`
+	LocalName  string            `json:"local_name"`
+	Config     Storage           `json:"config"`
+	Labels     map[string]string `json:"labels,omitempty"`
 }
 
 func (d Device) Name() string {
@@ -82,13 +83,14 @@ func (d Device) MarshalJSON() ([]byte, error) {
 }
 
 type Entity struct {
-	ID        string     `json:"id"`
-	DeviceID  string     `json:"device_id"`
-	Domain    string     `json:"domain"`
-	LocalName string     `json:"local_name"`
-	Config    Storage    `json:"config"`
-	Actions   []string   `json:"actions,omitempty"`
-	Data      EntityData `json:"data"`
+	ID        string            `json:"id"`
+	DeviceID  string            `json:"device_id"`
+	Domain    string            `json:"domain"`
+	LocalName string            `json:"local_name"`
+	Config    Storage           `json:"config"`
+	Actions   []string          `json:"actions,omitempty"`
+	Data      EntityData        `json:"data"`
+	Labels    map[string]string `json:"labels,omitempty"`
 }
 
 type EntityData struct {
@@ -175,5 +177,6 @@ type EntityEventEnvelope struct {
 // --- Search ---
 
 type SearchQuery struct {
-	Pattern string `json:"pattern"`
+	Pattern string            `json:"pattern"`
+	Labels  map[string]string `json:"labels,omitempty"`
 }
