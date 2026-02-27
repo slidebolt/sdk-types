@@ -174,6 +174,27 @@ type EntityEventEnvelope struct {
 	CreatedAt     time.Time       `json:"created_at"`
 }
 
+// --- Schema ---
+
+type FieldDescriptor struct {
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Required bool   `json:"required"`
+	Min      *int   `json:"min,omitempty"`
+	Max      *int   `json:"max,omitempty"`
+}
+
+type ActionDescriptor struct {
+	Action string            `json:"action"`
+	Fields []FieldDescriptor `json:"fields,omitempty"`
+}
+
+type DomainDescriptor struct {
+	Domain   string             `json:"domain"`
+	Commands []ActionDescriptor `json:"commands"`
+	Events   []ActionDescriptor `json:"events"`
+}
+
 // --- Search ---
 
 type SearchQuery struct {
