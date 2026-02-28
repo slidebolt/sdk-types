@@ -55,14 +55,13 @@ type Storage struct {
 // - SourceID: Owned by Hardware. The raw technical ID (e.g. MAC).
 // - SourceName: Owned by Hardware. The name the device calls itself.
 // - LocalName: Owned by User. Only modified via user API actions. Hardware discovery must never overwrite this.
-// - Config: Owned by Plugin/Hardware.
 // - Labels: Shared. User modifications take precedence over hardware defaults.
+// Protocol-specific raw data lives in the plugin's RawStore, not here.
 type Device struct {
 	ID         string            `json:"id"`
 	SourceID   string            `json:"source_id"`
 	SourceName string            `json:"source_name"`
 	LocalName  string            `json:"local_name"`
-	Config     Storage           `json:"config"`
 	Labels     map[string]string `json:"labels,omitempty"`
 }
 
@@ -95,7 +94,6 @@ type Entity struct {
 	DeviceID  string            `json:"device_id"`
 	Domain    string            `json:"domain"`
 	LocalName string            `json:"local_name"`
-	Config    Storage           `json:"config"`
 	Actions   []string          `json:"actions,omitempty"`
 	Data      EntityData        `json:"data"`
 	Labels    map[string]string `json:"labels,omitempty"`
