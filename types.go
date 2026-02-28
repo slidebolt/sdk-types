@@ -49,6 +49,14 @@ type Storage struct {
 	Data json.RawMessage `json:"data"`
 }
 
+// Device represents a physical or virtual piece of hardware.
+// Ownership Contract:
+// - ID: Owned by the Plugin. Must be deterministic and stable.
+// - SourceID: Owned by Hardware. The raw technical ID (e.g. MAC).
+// - SourceName: Owned by Hardware. The name the device calls itself.
+// - LocalName: Owned by User. Only modified via user API actions. Hardware discovery must never overwrite this.
+// - Config: Owned by Plugin/Hardware.
+// - Labels: Shared. User modifications take precedence over hardware defaults.
 type Device struct {
 	ID         string            `json:"id"`
 	SourceID   string            `json:"source_id"`
