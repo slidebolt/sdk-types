@@ -174,6 +174,39 @@ type EntityEventEnvelope struct {
 	CreatedAt     time.Time       `json:"created_at"`
 }
 
+// --- Batch ---
+
+type BatchDeviceRef struct {
+	PluginID string `json:"plugin_id"`
+	DeviceID string `json:"device_id"`
+}
+
+type BatchEntityRef struct {
+	PluginID string `json:"plugin_id"`
+	DeviceID string `json:"device_id"`
+	EntityID string `json:"entity_id"`
+}
+
+type BatchDeviceItem struct {
+	PluginID string `json:"plugin_id"`
+	Device   Device `json:"device"`
+}
+
+type BatchEntityItem struct {
+	PluginID string `json:"plugin_id"`
+	DeviceID string `json:"device_id"`
+	Entity   Entity `json:"entity"`
+}
+
+type BatchResult struct {
+	PluginID string          `json:"plugin_id,omitempty"`
+	DeviceID string          `json:"device_id,omitempty"`
+	EntityID string          `json:"entity_id,omitempty"`
+	OK       bool            `json:"ok"`
+	Error    string          `json:"error,omitempty"`
+	Data     json.RawMessage `json:"data,omitempty"`
+}
+
 // --- Schema ---
 
 type FieldDescriptor struct {
