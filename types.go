@@ -82,10 +82,12 @@ func (d Device) MarshalJSON() ([]byte, error) {
 	type Alias Device
 	return json.Marshal(&struct {
 		Alias
-		Name string `json:"name"`
+		Name   string            `json:"name"`
+		Labels map[string]string `json:"labels,omitempty"`
 	}{
-		Alias: (Alias)(d),
-		Name:  d.Name(),
+		Alias:  (Alias)(d),
+		Name:   d.Name(),
+		Labels: d.Labels,
 	})
 }
 
