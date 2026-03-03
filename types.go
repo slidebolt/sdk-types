@@ -5,6 +5,27 @@ import (
 	"time"
 )
 
+// decodeLabels unmarshals a raw label map, accepting both the legacy scalar
+// format ("room": "kitchen") and the new array format ("room": ["kitchen"]).
+func decodeLabels(raw map[string]json.RawMessage) map[string][]string {
+	if len(raw) == 0 {
+		return nil
+	}
+	out := make(map[string][]string, len(raw))
+	for k, v := range raw {
+		var ss []string
+		if json.Unmarshal(v, &ss) == nil {
+			out[k] = ss
+			continue
+		}
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			out[k] = []string{s}
+		}
+	}
+	return out
+}
+
 const JSONRPCVersion = "2.0"
 
 // --- Transport ---
@@ -62,7 +83,7 @@ type Device struct {
 	SourceID   string            `json:"source_id"`
 	SourceName string            `json:"source_name"`
 	LocalName  string            `json:"local_name"`
-	Labels     map[string]string `json:"labels,omitempty"`
+	Labels     map[string][]string `json:"labels,omitempty"`
 }
 
 func (d Device) Name() string {
@@ -80,15 +101,23 @@ func (d Device) Name() string {
 
 func (d Device) MarshalJSON() ([]byte, error) {
 	type Alias Device
-	return json.Marshal(&struct {
-		Alias
-		Name   string            `json:"name"`
-		Labels map[string]string `json:"labels,omitempty"`
-	}{
-		Alias:  (Alias)(d),
-		Name:   d.Name(),
-		Labels: d.Labels,
-	})
+	return json.Marshal((Alias)(d))
+}
+
+func (d *Device) UnmarshalJSON(data []byte) error {
+	var w struct {
+		ID         string                     `json:"id"`
+		SourceID   string                     `json:"source_id"`
+		SourceName string                     `json:"source_name"`
+		LocalName  string                     `json:"local_name"`
+		Labels     map[string]json.RawMessage `json:"labels,omitempty"`
+	}
+	if err := json.Unmarshal(data, &w); err != nil {
+		return err
+	}
+	d.ID, d.SourceID, d.SourceName, d.LocalName = w.ID, w.SourceID, w.SourceName, w.LocalName
+	d.Labels = decodeLabels(w.Labels)
+	return nil
 }
 
 type Entity struct {
@@ -96,9 +125,28 @@ type Entity struct {
 	DeviceID  string            `json:"device_id"`
 	Domain    string            `json:"domain"`
 	LocalName string            `json:"local_name"`
-	Actions   []string          `json:"actions,omitempty"`
-	Data      EntityData        `json:"data"`
-	Labels    map[string]string `json:"labels,omitempty"`
+	Actions   []string            `json:"actions,omitempty"`
+	Data      EntityData          `json:"data"`
+	Labels    map[string][]string `json:"labels,omitempty"`
+}
+
+func (e *Entity) UnmarshalJSON(data []byte) error {
+	var w struct {
+		ID        string                     `json:"id"`
+		DeviceID  string                     `json:"device_id"`
+		Domain    string                     `json:"domain"`
+		LocalName string                     `json:"local_name"`
+		Actions   []string                   `json:"actions,omitempty"`
+		Data      EntityData                 `json:"data"`
+		Labels    map[string]json.RawMessage `json:"labels,omitempty"`
+	}
+	if err := json.Unmarshal(data, &w); err != nil {
+		return err
+	}
+	e.ID, e.DeviceID, e.Domain, e.LocalName = w.ID, w.DeviceID, w.Domain, w.LocalName
+	e.Actions, e.Data = w.Actions, w.Data
+	e.Labels = decodeLabels(w.Labels)
+	return nil
 }
 
 type EntityData struct {
@@ -239,6 +287,6 @@ type DomainDescriptor struct {
 // --- Search ---
 
 type SearchQuery struct {
-	Pattern string            `json:"pattern"`
-	Labels  map[string]string `json:"labels,omitempty"`
+	Pattern string              `json:"pattern"`
+	Labels  map[string][]string `json:"labels,omitempty"`
 }
