@@ -53,9 +53,10 @@ type RPCError struct {
 // --- Registry ---
 
 type Manifest struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	ID      string             `json:"id"`
+	Name    string             `json:"name"`
+	Version string             `json:"version"`
+	Schemas []DomainDescriptor `json:"schemas,omitempty"`
 }
 
 type Registration struct {
@@ -289,4 +290,39 @@ type DomainDescriptor struct {
 type SearchQuery struct {
 	Pattern string              `json:"pattern"`
 	Labels  map[string][]string `json:"labels,omitempty"`
+}
+
+// --- Core Entities ---
+
+// CoreDeviceID returns the management device ID for a plugin.
+// By convention each plugin exposes a management device using its own pluginID as the device ID.
+func CoreDeviceID(pluginID string) string { return pluginID }
+
+// CoreEntities returns the standard health entity for the core management device.
+func CoreEntities(pluginID string) []Entity {
+	deviceID := CoreDeviceID(pluginID)
+	return []Entity{
+		{ID: "health", DeviceID: deviceID, Domain: "plugin.health", LocalName: "Health"},
+	}
+}
+
+// CoreDomains returns the DomainDescriptors for all core entity domains.
+// These should be included in every plugin's Manifest Schemas.
+func CoreDomains() []DomainDescriptor {
+	return []DomainDescriptor{
+		{
+			Domain:   "plugin.health",
+			Commands: []ActionDescriptor{},
+			Events: []ActionDescriptor{
+				{
+					Action: "status",
+					Fields: []FieldDescriptor{
+						{Name: "status", Type: "string", Required: true},
+						{Name: "message", Type: "string", Required: false},
+						{Name: "ts", Type: "string", Required: true},
+					},
+				},
+			},
+		},
+	}
 }

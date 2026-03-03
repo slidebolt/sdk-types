@@ -36,14 +36,6 @@ type EventPayload interface {
 	EventPayloadKind() string
 }
 
-// GenericPayload is the transitional non-raw payload container used by the
-// runner boundary when a domain-specific typed payload is not yet available.
-type GenericPayload map[string]any
-
-func (GenericPayload) CommandRequestPayloadKind() string  { return "generic" }
-func (GenericPayload) CommandResponsePayloadKind() string { return "generic" }
-func (GenericPayload) EventPayloadKind() string           { return "generic" }
-
 type InboundEventTyped[P EventPayload] struct {
 	DeviceID      string `json:"device_id"`
 	EntityID      string `json:"entity_id"`
