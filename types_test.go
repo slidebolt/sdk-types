@@ -54,7 +54,7 @@ func (MyCustomEventPayload) EventPayloadKind() string { return "my_custom_event"
 func TestCustomPayloadSupport(t *testing.T) {
 	// 1. Verify custom command requests
 	req := CommandRequest[MyCustomRequestPayload]{
-		ID: "cmd-1",
+		CommandID: "cmd-1",
 		Payload: MyCustomRequestPayload{
 			Value: 42,
 		},

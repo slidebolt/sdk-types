@@ -80,10 +80,10 @@ type Storage struct {
 // - Labels: Shared. User modifications take precedence over hardware defaults.
 // Protocol-specific raw data lives in the plugin's RawStore, not here.
 type Device struct {
-	ID         string            `json:"id"`
-	SourceID   string            `json:"source_id"`
-	SourceName string            `json:"source_name"`
-	LocalName  string            `json:"local_name"`
+	ID         string              `json:"id"`
+	SourceID   string              `json:"source_id"`
+	SourceName string              `json:"source_name"`
+	LocalName  string              `json:"local_name"`
 	Labels     map[string][]string `json:"labels,omitempty"`
 }
 
@@ -122,10 +122,10 @@ func (d *Device) UnmarshalJSON(data []byte) error {
 }
 
 type Entity struct {
-	ID        string            `json:"id"`
-	DeviceID  string            `json:"device_id"`
-	Domain    string            `json:"domain"`
-	LocalName string            `json:"local_name"`
+	ID        string              `json:"id"`
+	DeviceID  string              `json:"device_id"`
+	Domain    string              `json:"domain"`
+	LocalName string              `json:"local_name"`
 	Actions   []string            `json:"actions,omitempty"`
 	Data      EntityData          `json:"data"`
 	Labels    map[string][]string `json:"labels,omitempty"`
@@ -310,6 +310,34 @@ func CoreEntities(pluginID string) []Entity {
 // These should be included in every plugin's Manifest Schemas.
 func CoreDomains() []DomainDescriptor {
 	return []DomainDescriptor{
+		{
+			Domain:   "stream",
+			Commands: []ActionDescriptor{},
+			Events: []ActionDescriptor{
+				{
+					Action: "updated",
+					Fields: []FieldDescriptor{
+						{Name: "url", Type: "string", Required: true},
+						{Name: "format", Type: "string", Required: false},
+						{Name: "kind", Type: "string", Required: false},
+						{Name: "online", Type: "bool", Required: false},
+					},
+				},
+			},
+		},
+		{
+			Domain:   "image",
+			Commands: []ActionDescriptor{},
+			Events: []ActionDescriptor{
+				{
+					Action: "updated",
+					Fields: []FieldDescriptor{
+						{Name: "url", Type: "string", Required: true},
+						{Name: "format", Type: "string", Required: false},
+					},
+				},
+			},
+		},
 		{
 			Domain:   "plugin.health",
 			Commands: []ActionDescriptor{},
