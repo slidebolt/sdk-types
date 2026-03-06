@@ -292,6 +292,21 @@ type SearchQuery struct {
 	Labels  map[string][]string `json:"labels,omitempty"`
 }
 
+type SearchPluginsResponse struct {
+	PluginID string     `json:"plugin_id"`
+	Matches  []Manifest `json:"matches"`
+}
+
+type SearchDevicesResponse struct {
+	PluginID string   `json:"plugin_id"`
+	Matches  []Device `json:"matches"`
+}
+
+type SearchEntitiesResponse struct {
+	PluginID string   `json:"plugin_id"`
+	Matches  []Entity `json:"matches"`
+}
+
 // --- Core Entities ---
 
 // CoreDeviceID returns the management device ID for a plugin.
