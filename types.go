@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// decodeLabels unmarshals a raw label map, accepting both the legacy scalar
-// format ("room": "kitchen") and the new array format ("room": ["kitchen"]).
+// decodeLabels unmarshals a raw label map in canonical array format:
+// "room": ["kitchen"].
 func decodeLabels(raw map[string]json.RawMessage) map[string][]string {
 	if len(raw) == 0 {
 		return nil
@@ -16,11 +16,6 @@ func decodeLabels(raw map[string]json.RawMessage) map[string][]string {
 		var ss []string
 		if json.Unmarshal(v, &ss) == nil {
 			out[k] = ss
-			continue
-		}
-		var s string
-		if json.Unmarshal(v, &s) == nil {
-			out[k] = []string{s}
 		}
 	}
 	return out
@@ -154,10 +149,30 @@ type EntityData struct {
 	Desired       json.RawMessage `json:"desired,omitempty"`
 	Reported      json.RawMessage `json:"reported,omitempty"`
 	Effective     json.RawMessage `json:"effective,omitempty"`
-	SyncStatus    string          `json:"sync_status,omitempty"`
+	SyncStatus    SyncStatus      `json:"sync_status,omitempty"`
 	LastCommandID string          `json:"last_command_id,omitempty"`
 	LastEventID   string          `json:"last_event_id,omitempty"`
 	UpdatedAt     time.Time       `json:"updated_at,omitempty"`
+}
+
+// SyncStatus is the canonical state sync enum persisted in EntityData.
+type SyncStatus string
+
+const (
+	SyncStatusEmpty   SyncStatus = ""
+	SyncStatusSynced  SyncStatus = "synced"
+	SyncStatusPending SyncStatus = "pending"
+	SyncStatusFailed  SyncStatus = "failed"
+)
+
+// NormalizeSyncStatus converts any non-canonical value to a canonical one.
+func NormalizeSyncStatus(v SyncStatus) SyncStatus {
+	switch v {
+	case SyncStatusSynced, SyncStatusPending, SyncStatusFailed, SyncStatusEmpty:
+		return v
+	default:
+		return SyncStatusEmpty
+	}
 }
 
 // --- Commands ---
