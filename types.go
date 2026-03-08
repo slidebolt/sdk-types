@@ -116,16 +116,28 @@ func (d *Device) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// EntitySnapshot captures the Effective state of an entity at a point in time.
+// ID is the stable UUID used for data transmission.
+// Name and Labels are for human-readable discovery.
+type EntitySnapshot struct {
+	ID        string              `json:"id"`
+	Name      string              `json:"name"`
+	State     json.RawMessage     `json:"state"`
+	Labels    map[string][]string `json:"labels,omitempty"`
+	CreatedAt time.Time           `json:"created_at"`
+}
+
 type Entity struct {
-	ID         string              `json:"id"`
-	SourceID   string              `json:"source_id"`
-	SourceName string              `json:"source_name,omitempty"`
-	DeviceID   string              `json:"device_id"`
-	Domain     string              `json:"domain"`
-	LocalName  string              `json:"local_name"`
-	Actions    []string            `json:"actions,omitempty"`
-	Data       EntityData          `json:"data"`
-	Labels     map[string][]string `json:"labels,omitempty"`
+	ID         string                     `json:"id"`
+	SourceID   string                     `json:"source_id"`
+	SourceName string                     `json:"source_name,omitempty"`
+	DeviceID   string                     `json:"device_id"`
+	Domain     string                     `json:"domain"`
+	LocalName  string                     `json:"local_name"`
+	Actions    []string                   `json:"actions,omitempty"`
+	Data       EntityData                 `json:"data"`
+	Labels     map[string][]string        `json:"labels,omitempty"`
+	Snapshots  map[string]EntitySnapshot  `json:"snapshots,omitempty"`
 }
 
 func (e *Entity) UnmarshalJSON(data []byte) error {
@@ -139,6 +151,7 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 		Actions    []string                   `json:"actions,omitempty"`
 		Data       EntityData                 `json:"data"`
 		Labels     map[string]json.RawMessage `json:"labels,omitempty"`
+		Snapshots  map[string]EntitySnapshot  `json:"snapshots,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
@@ -146,6 +159,7 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 	e.ID, e.SourceID, e.SourceName, e.DeviceID, e.Domain, e.LocalName = w.ID, w.SourceID, w.SourceName, w.DeviceID, w.Domain, w.LocalName
 	e.Actions, e.Data = w.Actions, w.Data
 	e.Labels = decodeLabels(w.Labels)
+	e.Snapshots = w.Snapshots
 	return nil
 }
 
