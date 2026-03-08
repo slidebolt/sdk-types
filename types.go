@@ -77,7 +77,7 @@ type Storage struct {
 type Device struct {
 	ID         string              `json:"id"`
 	SourceID   string              `json:"source_id"`
-	SourceName string              `json:"source_name"`
+	SourceName string              `json:"source_name,omitempty"`
 	LocalName  string              `json:"local_name"`
 	Labels     map[string][]string `json:"labels,omitempty"`
 }
@@ -117,29 +117,33 @@ func (d *Device) UnmarshalJSON(data []byte) error {
 }
 
 type Entity struct {
-	ID        string              `json:"id"`
-	DeviceID  string              `json:"device_id"`
-	Domain    string              `json:"domain"`
-	LocalName string              `json:"local_name"`
-	Actions   []string            `json:"actions,omitempty"`
-	Data      EntityData          `json:"data"`
-	Labels    map[string][]string `json:"labels,omitempty"`
+	ID         string              `json:"id"`
+	SourceID   string              `json:"source_id"`
+	SourceName string              `json:"source_name,omitempty"`
+	DeviceID   string              `json:"device_id"`
+	Domain     string              `json:"domain"`
+	LocalName  string              `json:"local_name"`
+	Actions    []string            `json:"actions,omitempty"`
+	Data       EntityData          `json:"data"`
+	Labels     map[string][]string `json:"labels,omitempty"`
 }
 
 func (e *Entity) UnmarshalJSON(data []byte) error {
 	var w struct {
-		ID        string                     `json:"id"`
-		DeviceID  string                     `json:"device_id"`
-		Domain    string                     `json:"domain"`
-		LocalName string                     `json:"local_name"`
-		Actions   []string                   `json:"actions,omitempty"`
-		Data      EntityData                 `json:"data"`
-		Labels    map[string]json.RawMessage `json:"labels,omitempty"`
+		ID         string                     `json:"id"`
+		SourceID   string                     `json:"source_id"`
+		SourceName string                     `json:"source_name,omitempty"`
+		DeviceID   string                     `json:"device_id"`
+		Domain     string                     `json:"domain"`
+		LocalName  string                     `json:"local_name"`
+		Actions    []string                   `json:"actions,omitempty"`
+		Data       EntityData                 `json:"data"`
+		Labels     map[string]json.RawMessage `json:"labels,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
 	}
-	e.ID, e.DeviceID, e.Domain, e.LocalName = w.ID, w.DeviceID, w.Domain, w.LocalName
+	e.ID, e.SourceID, e.SourceName, e.DeviceID, e.Domain, e.LocalName = w.ID, w.SourceID, w.SourceName, w.DeviceID, w.Domain, w.LocalName
 	e.Actions, e.Data = w.Actions, w.Data
 	e.Labels = decodeLabels(w.Labels)
 	return nil
@@ -270,6 +274,13 @@ type BatchEntityItem struct {
 	Entity   Entity `json:"entity"`
 }
 
+type BatchCommandItem struct {
+	PluginID string          `json:"plugin_id"`
+	DeviceID string          `json:"device_id"`
+	EntityID string          `json:"entity_id"`
+	Payload  json.RawMessage `json:"payload"`
+}
+
 type BatchResult struct {
 	PluginID string          `json:"plugin_id,omitempty"`
 	DeviceID string          `json:"device_id,omitempty"`
@@ -277,6 +288,16 @@ type BatchResult struct {
 	OK       bool            `json:"ok"`
 	Error    string          `json:"error,omitempty"`
 	Data     json.RawMessage `json:"data,omitempty"`
+}
+
+type BatchCommandResult struct {
+	PluginID  string       `json:"plugin_id,omitempty"`
+	DeviceID  string       `json:"device_id,omitempty"`
+	EntityID  string       `json:"entity_id,omitempty"`
+	CommandID string       `json:"command_id,omitempty"`
+	State     CommandState `json:"state,omitempty"`
+	OK        bool         `json:"ok"`
+	Error     string       `json:"error,omitempty"`
 }
 
 // --- Schema ---
@@ -303,8 +324,13 @@ type DomainDescriptor struct {
 // --- Search ---
 
 type SearchQuery struct {
-	Pattern string              `json:"pattern"`
-	Labels  map[string][]string `json:"labels,omitempty"`
+	Pattern  string              `json:"pattern"`
+	Labels   map[string][]string `json:"labels,omitempty"`
+	PluginID string              `json:"plugin_id,omitempty"`
+	DeviceID string              `json:"device_id,omitempty"`
+	EntityID string              `json:"entity_id,omitempty"`
+	Domain   string              `json:"domain,omitempty"`
+	Limit    int                 `json:"limit,omitempty"`
 }
 
 type SearchPluginsResponse struct {
@@ -332,7 +358,7 @@ func CoreDeviceID(pluginID string) string { return pluginID }
 func CoreEntities(pluginID string) []Entity {
 	deviceID := CoreDeviceID(pluginID)
 	return []Entity{
-		{ID: "health", DeviceID: deviceID, Domain: "plugin.health", LocalName: "Health"},
+		{ID: "health", SourceID: "health", SourceName: "Health", DeviceID: deviceID, Domain: "plugin.health", LocalName: "Health"},
 	}
 }
 
