@@ -9,7 +9,7 @@ import (
 // DTOs must remain plain data — logic belongs in the runner or entity packages.
 func TestDTOPurity(t *testing.T) {
 	allowedMethods := map[string]int{
-		"Device": 2, // Name() and MarshalJSON()
+		"Device": 1, // Name()
 	}
 
 	typesToTest := []interface{}{

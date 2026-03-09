@@ -95,11 +95,6 @@ func (d Device) Name() string {
 	return d.ID
 }
 
-func (d Device) MarshalJSON() ([]byte, error) {
-	type Alias Device
-	return json.Marshal((Alias)(d))
-}
-
 func (d *Device) UnmarshalJSON(data []byte) error {
 	var w struct {
 		ID         string                     `json:"id"`

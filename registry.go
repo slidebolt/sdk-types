@@ -4,24 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"sync"
 )
 
-var domainRegistry = map[string]DomainDescriptor{}
+var (
+	domainMu       sync.RWMutex
+	domainRegistry = map[string]DomainDescriptor{}
+)
 
 func RegisterDomain(d DomainDescriptor) {
+	domainMu.Lock()
 	domainRegistry[d.Domain] = d
+	domainMu.Unlock()
 }
 
 func GetDomainDescriptor(domain string) (DomainDescriptor, bool) {
+	domainMu.RLock()
 	d, ok := domainRegistry[domain]
+	domainMu.RUnlock()
 	return d, ok
 }
 
 func AllDomainDescriptors() []DomainDescriptor {
+	domainMu.RLock()
 	out := make([]DomainDescriptor, 0, len(domainRegistry))
 	for _, d := range domainRegistry {
 		out = append(out, d)
 	}
+	domainMu.RUnlock()
 	sort.Slice(out, func(i, j int) bool { return out[i].Domain < out[j].Domain })
 	return out
 }
