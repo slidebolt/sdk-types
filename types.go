@@ -75,11 +75,12 @@ type Storage struct {
 // - Labels: Shared. User modifications take precedence over hardware defaults.
 // Protocol-specific raw data lives in the plugin's RawStore, not here.
 type Device struct {
-	ID         string              `json:"id"`
-	SourceID   string              `json:"source_id"`
-	SourceName string              `json:"source_name,omitempty"`
-	LocalName  string              `json:"local_name"`
-	Labels     map[string][]string `json:"labels,omitempty"`
+	ID          string              `json:"id"`
+	SourceID    string              `json:"source_id"`
+	SourceName  string              `json:"source_name,omitempty"`
+	LocalName   string              `json:"local_name"`
+	Labels      map[string][]string `json:"labels,omitempty"`
+	EntityQuery string              `json:"entity_query,omitempty"`
 }
 
 func (d Device) Name() string {
@@ -97,17 +98,19 @@ func (d Device) Name() string {
 
 func (d *Device) UnmarshalJSON(data []byte) error {
 	var w struct {
-		ID         string                     `json:"id"`
-		SourceID   string                     `json:"source_id"`
-		SourceName string                     `json:"source_name"`
-		LocalName  string                     `json:"local_name"`
-		Labels     map[string]json.RawMessage `json:"labels,omitempty"`
+		ID          string                     `json:"id"`
+		SourceID    string                     `json:"source_id"`
+		SourceName  string                     `json:"source_name"`
+		LocalName   string                     `json:"local_name"`
+		Labels      map[string]json.RawMessage `json:"labels,omitempty"`
+		EntityQuery string                     `json:"entity_query,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
 	}
 	d.ID, d.SourceID, d.SourceName, d.LocalName = w.ID, w.SourceID, w.SourceName, w.LocalName
 	d.Labels = decodeLabels(w.Labels)
+	d.EntityQuery = w.EntityQuery
 	return nil
 }
 
@@ -123,16 +126,16 @@ type EntitySnapshot struct {
 }
 
 type Entity struct {
-	ID         string                     `json:"id"`
-	SourceID   string                     `json:"source_id"`
-	SourceName string                     `json:"source_name,omitempty"`
-	DeviceID   string                     `json:"device_id"`
-	Domain     string                     `json:"domain"`
-	LocalName  string                     `json:"local_name"`
-	Actions    []string                   `json:"actions,omitempty"`
-	Data       EntityData                 `json:"data"`
-	Labels     map[string][]string        `json:"labels,omitempty"`
-	Snapshots  map[string]EntitySnapshot  `json:"snapshots,omitempty"`
+	ID         string                    `json:"id"`
+	SourceID   string                    `json:"source_id"`
+	SourceName string                    `json:"source_name,omitempty"`
+	DeviceID   string                    `json:"device_id"`
+	Domain     string                    `json:"domain"`
+	LocalName  string                    `json:"local_name"`
+	Actions    []string                  `json:"actions,omitempty"`
+	Data       EntityData                `json:"data"`
+	Labels     map[string][]string       `json:"labels,omitempty"`
+	Snapshots  map[string]EntitySnapshot `json:"snapshots,omitempty"`
 }
 
 func (e *Entity) UnmarshalJSON(data []byte) error {
