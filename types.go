@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -76,11 +77,12 @@ type Storage struct {
 // Protocol-specific raw data lives in the plugin's RawStore, not here.
 type Device struct {
 	ID          string              `json:"id"`
+	PluginID    string              `json:"plugin_id,omitempty"`
 	SourceID    string              `json:"source_id"`
 	SourceName  string              `json:"source_name,omitempty"`
 	LocalName   string              `json:"local_name"`
 	Labels      map[string][]string `json:"labels,omitempty"`
-	EntityQuery string              `json:"entity_query,omitempty"`
+	EntityQuery *SearchQuery        `json:"entity_query,omitempty"`
 }
 
 func (d Device) Name() string {
@@ -99,16 +101,17 @@ func (d Device) Name() string {
 func (d *Device) UnmarshalJSON(data []byte) error {
 	var w struct {
 		ID          string                     `json:"id"`
+		PluginID    string                     `json:"plugin_id"`
 		SourceID    string                     `json:"source_id"`
 		SourceName  string                     `json:"source_name"`
 		LocalName   string                     `json:"local_name"`
 		Labels      map[string]json.RawMessage `json:"labels,omitempty"`
-		EntityQuery string                     `json:"entity_query,omitempty"`
+		EntityQuery *SearchQuery               `json:"entity_query,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
 	}
-	d.ID, d.SourceID, d.SourceName, d.LocalName = w.ID, w.SourceID, w.SourceName, w.LocalName
+	d.ID, d.PluginID, d.SourceID, d.SourceName, d.LocalName = w.ID, w.PluginID, w.SourceID, w.SourceName, w.LocalName
 	d.Labels = decodeLabels(w.Labels)
 	d.EntityQuery = w.EntityQuery
 	return nil
@@ -127,6 +130,7 @@ type EntitySnapshot struct {
 
 type Entity struct {
 	ID         string                    `json:"id"`
+	PluginID   string                    `json:"plugin_id,omitempty"`
 	SourceID   string                    `json:"source_id"`
 	SourceName string                    `json:"source_name,omitempty"`
 	DeviceID   string                    `json:"device_id"`
@@ -136,28 +140,44 @@ type Entity struct {
 	Data       EntityData                `json:"data"`
 	Labels     map[string][]string       `json:"labels,omitempty"`
 	Snapshots  map[string]EntitySnapshot `json:"snapshots,omitempty"`
+	// CommandQuery, when non-nil, makes this entity a virtual query-backed group.
+	// Commands sent to it are fanned out to all matching entities. This works for
+	// entities owned by any plugin, including ordinary plugin namespaces.
+	CommandQuery *SearchQuery `json:"command_query,omitempty"`
+}
+
+// Script is the canonical automation/script resource bound to a concrete entity.
+// Source is persisted as plain Lua text on disk.
+type Script struct {
+	PluginID string `json:"plugin_id"`
+	DeviceID string `json:"device_id"`
+	EntityID string `json:"entity_id"`
+	Source   string `json:"source"`
 }
 
 func (e *Entity) UnmarshalJSON(data []byte) error {
 	var w struct {
-		ID         string                     `json:"id"`
-		SourceID   string                     `json:"source_id"`
-		SourceName string                     `json:"source_name,omitempty"`
-		DeviceID   string                     `json:"device_id"`
-		Domain     string                     `json:"domain"`
-		LocalName  string                     `json:"local_name"`
-		Actions    []string                   `json:"actions,omitempty"`
-		Data       EntityData                 `json:"data"`
-		Labels     map[string]json.RawMessage `json:"labels,omitempty"`
-		Snapshots  map[string]EntitySnapshot  `json:"snapshots,omitempty"`
+		ID           string                     `json:"id"`
+		PluginID     string                     `json:"plugin_id"`
+		SourceID     string                     `json:"source_id"`
+		SourceName   string                     `json:"source_name,omitempty"`
+		DeviceID     string                     `json:"device_id"`
+		Domain       string                     `json:"domain"`
+		LocalName    string                     `json:"local_name"`
+		Actions      []string                   `json:"actions,omitempty"`
+		Data         EntityData                 `json:"data"`
+		Labels       map[string]json.RawMessage `json:"labels,omitempty"`
+		Snapshots    map[string]EntitySnapshot  `json:"snapshots,omitempty"`
+		CommandQuery *SearchQuery               `json:"command_query,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
 	}
-	e.ID, e.SourceID, e.SourceName, e.DeviceID, e.Domain, e.LocalName = w.ID, w.SourceID, w.SourceName, w.DeviceID, w.Domain, w.LocalName
+	e.ID, e.PluginID, e.SourceID, e.SourceName, e.DeviceID, e.Domain, e.LocalName = w.ID, w.PluginID, w.SourceID, w.SourceName, w.DeviceID, w.Domain, w.LocalName
 	e.Actions, e.Data = w.Actions, w.Data
 	e.Labels = decodeLabels(w.Labels)
 	e.Snapshots = w.Snapshots
+	e.CommandQuery = w.CommandQuery
 	return nil
 }
 
@@ -286,6 +306,17 @@ type BatchEntityItem struct {
 	Entity   Entity `json:"entity"`
 }
 
+type BatchDeviceRead struct {
+	PluginID string `json:"plugin_id"`
+	Count    int    `json:"count"`
+}
+
+type BatchEntityRead struct {
+	PluginID string `json:"plugin_id"`
+	DeviceID string `json:"device_id,omitempty"`
+	Count    int    `json:"count"`
+}
+
 type BatchCommandItem struct {
 	PluginID string          `json:"plugin_id"`
 	DeviceID string          `json:"device_id"`
@@ -335,14 +366,36 @@ type DomainDescriptor struct {
 
 // --- Search ---
 
+// SearchQuery defines search/filter criteria for finding devices or entities.
+// All fields are optional; omitting a field means "match anything".
+// Pattern supports case-insensitive substring and glob syntax (* and ?).
+// Labels requires every specified key to match at least one value (AND logic).
 type SearchQuery struct {
-	Pattern  string              `json:"pattern"`
+	Pattern  string              `json:"pattern,omitempty"`
 	Labels   map[string][]string `json:"labels,omitempty"`
 	PluginID string              `json:"plugin_id,omitempty"`
 	DeviceID string              `json:"device_id,omitempty"`
 	EntityID string              `json:"entity_id,omitempty"`
 	Domain   string              `json:"domain,omitempty"`
 	Limit    int                 `json:"limit,omitempty"`
+}
+
+// ParseLabels converts a slice of "key:value" strings into a label map.
+// Keys with values that contain colons are preserved (only the first colon splits).
+// Pairs without a colon are silently ignored.
+// Example: ["room:kitchen", "Plugin:Plugin-01"] → {"room":["kitchen"],"Plugin":["Plugin-01"]}
+func ParseLabels(pairs []string) map[string][]string {
+	if len(pairs) == 0 {
+		return nil
+	}
+	labels := make(map[string][]string, len(pairs))
+	for _, p := range pairs {
+		k, v, ok := strings.Cut(p, ":")
+		if ok {
+			labels[k] = append(labels[k], v)
+		}
+	}
+	return labels
 }
 
 type SearchPluginsResponse struct {
