@@ -144,6 +144,11 @@ type Entity struct {
 	// Commands sent to it are fanned out to all matching entities. This works for
 	// entities owned by any plugin, including ordinary plugin namespaces.
 	CommandQuery *SearchQuery `json:"command_query,omitempty"`
+	// CommandFilter, when non-empty, restricts CommandQuery fan-out to only the
+	// listed command types. Commands not in the list fall through to the owning
+	// plugin's OnCommand for custom handling. Empty/nil means all commands fan out
+	// (identical to current behaviour — fully backward compatible).
+	CommandFilter []string `json:"command_filter,omitempty"`
 	// Meta holds arbitrary named JSON blobs attached to this entity.
 	// Any caller may write meta; keys are merged, not replaced, on patch.
 	Meta map[string]json.RawMessage `json:"meta,omitempty"`
@@ -171,7 +176,8 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 		Data         EntityData                 `json:"data"`
 		Labels       map[string]json.RawMessage `json:"labels,omitempty"`
 		Snapshots    map[string]EntitySnapshot  `json:"snapshots,omitempty"`
-		CommandQuery *SearchQuery               `json:"command_query,omitempty"`
+		CommandQuery  *SearchQuery               `json:"command_query,omitempty"`
+		CommandFilter []string                   `json:"command_filter,omitempty"`
 		Meta         map[string]json.RawMessage `json:"meta,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
@@ -182,6 +188,7 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 	e.Labels = decodeLabels(w.Labels)
 	e.Snapshots = w.Snapshots
 	e.CommandQuery = w.CommandQuery
+	e.CommandFilter = w.CommandFilter
 	e.Meta = w.Meta
 	return nil
 }
