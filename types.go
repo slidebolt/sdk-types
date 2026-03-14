@@ -144,6 +144,9 @@ type Entity struct {
 	// Commands sent to it are fanned out to all matching entities. This works for
 	// entities owned by any plugin, including ordinary plugin namespaces.
 	CommandQuery *SearchQuery `json:"command_query,omitempty"`
+	// Meta holds arbitrary named JSON blobs attached to this entity.
+	// Any caller may write meta; keys are merged, not replaced, on patch.
+	Meta map[string]json.RawMessage `json:"meta,omitempty"`
 }
 
 // Script is the canonical automation/script resource bound to a concrete entity.
@@ -169,6 +172,7 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 		Labels       map[string]json.RawMessage `json:"labels,omitempty"`
 		Snapshots    map[string]EntitySnapshot  `json:"snapshots,omitempty"`
 		CommandQuery *SearchQuery               `json:"command_query,omitempty"`
+		Meta         map[string]json.RawMessage `json:"meta,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
@@ -178,6 +182,7 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 	e.Labels = decodeLabels(w.Labels)
 	e.Snapshots = w.Snapshots
 	e.CommandQuery = w.CommandQuery
+	e.Meta = w.Meta
 	return nil
 }
 
