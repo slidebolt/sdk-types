@@ -165,20 +165,20 @@ type Script struct {
 
 func (e *Entity) UnmarshalJSON(data []byte) error {
 	var w struct {
-		ID           string                     `json:"id"`
-		PluginID     string                     `json:"plugin_id"`
-		SourceID     string                     `json:"source_id"`
-		SourceName   string                     `json:"source_name,omitempty"`
-		DeviceID     string                     `json:"device_id"`
-		Domain       string                     `json:"domain"`
-		LocalName    string                     `json:"local_name"`
-		Actions      []string                   `json:"actions,omitempty"`
-		Data         EntityData                 `json:"data"`
-		Labels       map[string]json.RawMessage `json:"labels,omitempty"`
-		Snapshots    map[string]EntitySnapshot  `json:"snapshots,omitempty"`
+		ID            string                     `json:"id"`
+		PluginID      string                     `json:"plugin_id"`
+		SourceID      string                     `json:"source_id"`
+		SourceName    string                     `json:"source_name,omitempty"`
+		DeviceID      string                     `json:"device_id"`
+		Domain        string                     `json:"domain"`
+		LocalName     string                     `json:"local_name"`
+		Actions       []string                   `json:"actions,omitempty"`
+		Data          EntityData                 `json:"data"`
+		Labels        map[string]json.RawMessage `json:"labels,omitempty"`
+		Snapshots     map[string]EntitySnapshot  `json:"snapshots,omitempty"`
 		CommandQuery  *SearchQuery               `json:"command_query,omitempty"`
 		CommandFilter []string                   `json:"command_filter,omitempty"`
-		Meta         map[string]json.RawMessage `json:"meta,omitempty"`
+		Meta          map[string]json.RawMessage `json:"meta,omitempty"`
 	}
 	if err := json.Unmarshal(data, &w); err != nil {
 		return err
